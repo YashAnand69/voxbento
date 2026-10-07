@@ -115,3 +115,7 @@ Legacy organizer requests to allowlisted event-management paths under `/admin/`,
 | `portal/websockets/manager.py` | `ws_booth` and `ws_captions` endpoints |
 | `portal/websockets/handlers.py` | Specific `_handle_*` logic for WS messages |
 | `fastapi_app.py` | Application lifespan, router include aggregation |
+
+## TTS listener authorization
+
+TTS WebSockets at `/ws/tts/{room_id}/{language_code}/{booth_id}` require a scoped listener or participant token, an authenticated user, or the event’s valid listener join-code cookie. The room coordinate must match the source booth; the target translation language may differ from its source language. Cookie connections are checked against the deployment origin. Anonymous connections are rejected even when `BOOTH_ACCESS_TOKEN` is unset.

@@ -111,3 +111,7 @@ VoxBento Local is our sovereign, 100% on-device AI meeting intelligence and inte
 - **Download**: Visit [`/local`](https://voxbento.org/local) for platform-detected desktop packages (.dmg, .exe, .deb, .AppImage).
 - **Source Code & Releases**: Built at [github.com/ArnavBallinCode/voxa](https://github.com/ArnavBallinCode/voxa).
 - **Air-Gapped & Sovereign**: Whisper live transcription and Qwen 3.5 structured meeting minutes run completely on-device via Apple Metal and NVIDIA CUDA acceleration.
+
+## TTS listener authorization
+
+TTS WebSockets at `/ws/tts/{room_id}/{language_code}/{booth_id}` require a scoped listener or participant token, an authenticated user, or the event’s valid listener join-code cookie. The room coordinate must match the source booth; the target translation language may differ from its source language. Cookie connections are checked against the deployment origin. Anonymous connections are rejected even when `BOOTH_ACCESS_TOKEN` is unset.

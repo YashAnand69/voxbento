@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import json
 import logging
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from portal.auth import WSAuthError, resolve_booth_role, resolve_ws_auth
+from portal.booth_identity import parse_booth_id
+from portal.config import settings
+from portal.database import get_event_by_slug, get_room_by_id, get_session
 from portal.globals import booths
+from portal.routers.listener import has_listener_access
 from portal.websockets.manager import (
     Session,
     _handle_accept_handoff,
@@ -122,6 +127,57 @@ async def ws_captions(websocket: WebSocket, booth_id: str) -> None:
 
 @router.websocket("/ws/tts/{room_id}/{language_code}/{booth_id}")
 async def ws_tts(websocket: WebSocket, room_id: int, language_code: str, booth_id: str) -> None:
+    try:
+        event_slug, source_room, source_language = parse_booth_id(booth_id)
+    except ValueError:
+        await websocket.close(code=4003)
+        return
+    if source_room != room_id:
+        await websocket.close(code=4003)
+        return
+
+    if not websocket.query_params.get("token"):
+        origin = websocket.headers.get("origin")
+        if origin and urlparse(origin).netloc not in {urlparse(settings.public_base_url).netloc, websocket.url.netloc}:
+            await websocket.close(code=4003)
+            return
+
+    # Listener pages use an event join-code cookie, not an invite session.
+    join_cookie = websocket.cookies.get(f"listener_code_{event_slug}")
+    if join_cookie and not websocket.query_params.get("token"):
+        async with get_session() as db:
+            event = await get_event_by_slug(db, event_slug)
+            room = await get_room_by_id(db, room_id)
+            allowed = (
+                event is not None
+                and room is not None
+                and room.event_id == event.id
+                and has_listener_access(websocket, event_slug, event.listener_join_code, None)
+            )
+        if not allowed:
+            await websocket.close(code=4003)
+            return
+    else:
+        try:
+            payload = await resolve_ws_auth(websocket, booth_id)
+        except WSAuthError:
+            return
+        if not payload:
+            await websocket.close(code=4001)
+            return
+        if not (payload.get("is_admin") or payload.get("admin") or payload.get("user")):
+            if payload.get("role") == "listener":
+                allowed = payload.get("event_slug") == event_slug
+            else:
+                allowed = (
+                    payload.get("event_slug") == event_slug
+                    and payload.get("language_code") == source_language
+                    and str(payload.get("room_id")) == str(room_id)
+                )
+            if not allowed:
+                await websocket.close(code=4003)
+                return
+
     await websocket.accept()
     tts_manager.add(websocket, room_id, language_code, booth_id)
     try:

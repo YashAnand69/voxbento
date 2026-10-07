@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import jwt
-from fastapi import APIRouter, HTTPException, Query, Request, status
+from fastapi import APIRouter, HTTPException, Query, Request, WebSocket, status
 from fastapi.templating import Jinja2Templates
 
 from portal.auth import decode_token, get_booth_session
@@ -66,7 +66,9 @@ def _submitted_code(request: Request, event_slug: str, code: str | None) -> str 
     return code or request.cookies.get(f"listener_code_{event_slug}")
 
 
-def has_listener_access(request: Request, event_slug: str, listener_join_code: str | None, code: str | None) -> bool:
+def has_listener_access(
+    request: Request | WebSocket, event_slug: str, listener_join_code: str | None, code: str | None
+) -> bool:
     payload = get_booth_session(request)
     if payload and payload.get("user"):
         return True
