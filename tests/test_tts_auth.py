@@ -112,3 +112,18 @@ def test_tts_rejects_foreign_origin_join_cookie():
     with pytest.raises(WebSocketDisconnect):
         with connect(client, headers={"origin": "https://unrelated.example"}):
             pass
+
+
+@pytest.mark.parametrize("access_token", ["", "configured"])
+@pytest.mark.parametrize("credential", ["query", "cookie"])
+def test_stale_join_code_falls_back_to_valid_listener_credentials(monkeypatch, access_token, credential):
+    monkeypatch.setattr(settings, "booth_access_token", access_token)
+    client = TestClient(app)
+    client.cookies.set("listener_code_conference", "OLD-CODE")
+    token = create_listener_token(event_slug="conference")
+    if credential == "cookie":
+        client.cookies.set("session_token", token)
+        token = None
+    with connect(client, token=token):
+        assert tts_manager.has_listeners(1, "fr", "conference-1-en")
+    assert not tts_manager.has_listeners(1, "fr", "conference-1-en")

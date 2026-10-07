@@ -144,6 +144,7 @@ async def ws_tts(websocket: WebSocket, room_id: int, language_code: str, booth_i
 
     # Listener pages use an event join-code cookie, not an invite session.
     join_cookie = websocket.cookies.get(f"listener_code_{event_slug}")
+    allowed = False
     if join_cookie and not websocket.query_params.get("token"):
         async with get_session() as db:
             event = await get_event_by_slug(db, event_slug)
@@ -154,10 +155,7 @@ async def ws_tts(websocket: WebSocket, room_id: int, language_code: str, booth_i
                 and room.event_id == event.id
                 and has_listener_access(websocket, event_slug, event.listener_join_code, None)
             )
-        if not allowed:
-            await websocket.close(code=4003)
-            return
-    else:
+    if not allowed:
         try:
             payload = await resolve_ws_auth(websocket, booth_id)
         except WSAuthError:
