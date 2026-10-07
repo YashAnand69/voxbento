@@ -232,4 +232,4 @@ Do not defer documentation to a follow-up PR.
 
 ## TTS listener authorization
 
-TTS WebSockets at `/ws/tts/{room_id}/{language_code}/{booth_id}` require a scoped listener or participant token, an authenticated user, or the event’s valid listener join-code cookie. The room coordinate must match the source booth; the target translation language may differ from its source language. Cookie connections are checked against the deployment origin. Anonymous connections are rejected even when `BOOTH_ACCESS_TOKEN` is unset.
+TTS WebSockets at `/ws/tts/{room_id}/{language_code}/{booth_id}` require a scoped listener or participant token, an authenticated user, or the event’s valid listener join-code cookie. The room coordinate must match the source booth; the target translation language may differ from its source language. For cookie authentication, clients may omit `Origin`. When provided, its host and port must match the configured public host or the WebSocket host; the scheme is not compared. Anonymous connections are rejected even when `BOOTH_ACCESS_TOKEN` is unset.
