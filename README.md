@@ -111,3 +111,5 @@ VoxBento Local is our sovereign, 100% on-device AI meeting intelligence and inte
 - **Download**: Visit [`/local`](https://voxbento.org/local) for platform-detected desktop packages (.dmg, .exe, .deb, .AppImage).
 - **Source Code & Releases**: Built at [github.com/ArnavBallinCode/voxa](https://github.com/ArnavBallinCode/voxa).
 - **Air-Gapped & Sovereign**: Whisper live transcription and Qwen 3.5 structured meeting minutes run completely on-device via Apple Metal and NVIDIA CUDA acceleration.
+
+Cloud transcription requests to OpenAI and ElevenLabs surface HTTP failures to the worker. Rate limits (429) and server errors (5xx) are retried up to three times; other HTTP errors fail immediately. A successful empty transcript remains valid silence.

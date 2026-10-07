@@ -189,3 +189,5 @@ MediaMTX is configured to allow only one publisher per stream path at a time. Ev
 
 </TabItem>
 </Tabs>
+
+Cloud transcription requests to OpenAI and ElevenLabs surface HTTP failures to the worker. Rate limits (429) and server errors (5xx) are retried up to three times; other HTTP errors fail immediately. A successful empty transcript remains valid silence.

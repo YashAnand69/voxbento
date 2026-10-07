@@ -181,3 +181,7 @@ If the booth is currently live (`state.active_interpreter_id is not None`), the 
 Clients subscribe to `/ws/captions/{booth_id}` (no auth).
 Receives: `booth:state`, `caption {status: partial|final|clear, text}`.
 Used by: listener pages, subtitling overlays.
+
+## Cloud provider failures
+
+Cloud transcription requests to OpenAI and ElevenLabs surface HTTP failures to the worker. Rate limits (429) and server errors (5xx) are retried up to three times; other HTTP errors fail immediately. A successful empty transcript remains valid silence.

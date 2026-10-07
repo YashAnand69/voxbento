@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
 
 import httpx
-from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import AsyncRetrying, retry_if_exception, stop_after_attempt, wait_exponential
 
 from portal.globals import get_http_client
 from portal.transcription.providers.base import (
@@ -12,6 +14,7 @@ from portal.transcription.providers.base import (
     TranscriptionProvider,
     pcm_to_wav,
 )
+from portal.transcription.providers.http import is_retryable_transcription_error
 
 logger = logging.getLogger(__name__)
 
@@ -38,22 +41,18 @@ class OpenAIProvider(TranscriptionProvider):
             async for attempt in AsyncRetrying(
                 wait=wait_exponential(multiplier=1, min=2, max=10),
                 stop=stop_after_attempt(3),
-                retry=retry_if_exception_type((httpx.ReadTimeout, httpx.ConnectError, httpx.HTTPStatusError)),
+                retry=retry_if_exception(is_retryable_transcription_error),
+                reraise=True,
             ):
                 with attempt:
                     resp = await client.post(
                         "https://api.openai.com/v1/audio/transcriptions", headers=headers, files=files, data=data
                     )
-                    if resp.status_code in (429, 502, 503, 504):
-                        resp.raise_for_status()
-                    if resp.status_code == 200:
-                        return resp.json().get("text", "").strip()
-                    else:
-                        logger.error(f"OpenAI error status={resp.status_code}")
-        except Exception as e:
-            logger.error(f"OpenAI request failed: {e}")
-            raise e
-        return ""
+                    resp.raise_for_status()
+                    return resp.json().get("text", "").strip()
+        except httpx.HTTPError as error:
+            logger.error("OpenAI request failed: %s", error)
+            raise
 
     async def run_stream(
         self,
