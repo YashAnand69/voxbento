@@ -115,3 +115,7 @@ Legacy organizer requests to allowlisted event-management paths under `/admin/`,
 | `portal/websockets/manager.py` | `ws_booth` and `ws_captions` endpoints |
 | `portal/websockets/handlers.py` | Specific `_handle_*` logic for WS messages |
 | `fastapi_app.py` | Application lifespan, router include aggregation |
+
+## OAuth room scope
+
+OAuth room routes under `/api/v1/events/{event_slug}/rooms/{room_id}` require the room to belong to the token’s event before owner, coordinator, or confidential-client access is granted. Missing and cross-event rooms return 404.

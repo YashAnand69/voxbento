@@ -189,3 +189,7 @@ MediaMTX is configured to allow only one publisher per stream path at a time. Ev
 
 </TabItem>
 </Tabs>
+
+## OAuth room scope
+
+OAuth room routes under `/api/v1/events/{event_slug}/rooms/{room_id}` require the room to belong to the token’s event before owner, coordinator, or confidential-client access is granted. Missing and cross-event rooms return 404.
